@@ -1,0 +1,2 @@
+xposed模块，模块功能是解析系统当前运行应用的apk，是以dex2Jar_File项目进行联系解析
+大概就是以IXposedHookLoadPackage获得当前应用的apk，把apk文件上传给本地服务dex2Jar_File里进行代码转换从而得到apk文件的Java代码。
