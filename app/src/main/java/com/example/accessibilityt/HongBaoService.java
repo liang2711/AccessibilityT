@@ -76,7 +76,7 @@ public class HongBaoService extends AccessibilityService {
                 super.run();
                 OkHttpClient client=new OkHttpClient();
                 Request request=new Request.Builder()
-                        .url("http://192.168.169.1:8088/dex2java/test")
+                        .url("http://192.168.1.43:8088/dex2java/test")
                         .build();
                 try {
                     Response response=client.newCall(request).execute();
