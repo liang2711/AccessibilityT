@@ -3,8 +3,11 @@ package com.example.accessibilityt.view;
 import android.net.Uri;
 
 public class ConstantV {
-    public static final String SERVICER_IP="http://192.168.169.1:8088/dex2java";
+    public static final String APPLICATION_JSON="/data/user/0/com.example.accessibilityt/cache/application.json";
+    public static final String SERVICER_IP="http://192.168.1.41:8088/dex2java";
     public static final String KEY_NAME="xposed";
+
+    public static final String KET_APPNAME="appname";
 
     public static final int ITEM=1;
 
