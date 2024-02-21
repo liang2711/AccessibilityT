@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.example.accessibilityt.MainActivity;
+import com.example.accessibilityt.dao.AppCodeInfo;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -65,7 +66,21 @@ public class VDataTools {
                     if (mapClassCode==null)
                         mapClassCode=new HashMap<>();
                     Bundle bundle=msg.getData();
-                    mapClassCode.put(bundle.getString(ConstantV.KEY_CLASSNAME),bundle.getString(ConstantV.KEY_CONTEXT));
+                    String className=bundle.getString(ConstantV.KEY_CLASSNAME);
+                    String appName=bundle.getString(ConstantV.KET_APPNAME);
+                    if (mapClassCode==null)
+                        mapClassCode=new HashMap<>();
+                    if (mapClassCode.containsKey(className)){
+                        if (mapClassCode.get(className).equals(appName))
+                            //为了room框架insert方法不处罚异常（数据重复）
+                            Log.e(MainActivity.TAG,"mapClassCode value duplicate！");
+                            return;
+                    }
+                    mapClassCode.put(className,appName);
+                    AppCodeInfo info=new AppCodeInfo();
+                    info.className=bundle.getString(className);
+                    info.code=bundle.getString(ConstantV.KEY_CONTEXT);
+                    info.appName=bundle.getString(appName);
                     break;
                 case 2:
                     String packageName= (String) msg.obj;
@@ -74,7 +89,16 @@ public class VDataTools {
             }
         }
     };
-    public static void jarFileZipResponse(String urlPath, String filePackageName, String appPackageName){
+
+    private void setDatabase(AppCodeInfo info){
+        new Thread(){
+            @Override
+            public void run() {
+                super.run();
+            }
+        }.start();
+    }
+    public static void jarFileZipResponse(String urlPath, String filePackageName, String appPackageName,String appName){
         new Thread(){
             @Override
             public void run() {
@@ -110,7 +134,7 @@ public class VDataTools {
                                     continue;
                                 String[] filename=className.split("/");
                                 Log.d(MainActivity.TAG,"class:"+classEntry.getName());
-                                doPost( ConstantV.SERVICER_IP+"/outClassToJava",filename[filename.length-1],jarInputStream);
+                                doPost( ConstantV.SERVICER_IP+"/outClassToJava",filename[filename.length-1],jarInputStream,appName);
 
                             }
                         }
@@ -123,7 +147,7 @@ public class VDataTools {
         }.start();
     }
 
-    static int doPost(String urlPath,String className,InputStream inputStream){
+    static int doPost(String urlPath,String className,InputStream inputStream,String appName){
         final String LINE_FEED = "\r\n";
         final String BOUNDARY = "#";
         try {
@@ -165,13 +189,13 @@ public class VDataTools {
             while ((line=reader.readLine())!=null){
                 response.append(line);
             }
-            Log.d(MainActivity.TAG,response.toString()+" codestate:"+responseCode);
             reader.close();
 
 
             Message msg=new Message();
             msg.what=1;
             Bundle bundle=new Bundle();
+            bundle.putString(ConstantV.KET_APPNAME,appName);
             bundle.putString(ConstantV.KEY_CLASSNAME,className);
             bundle.putString(ConstantV.KEY_CONTEXT,response.toString());
             msg.setData(bundle);
