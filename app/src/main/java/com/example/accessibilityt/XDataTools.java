@@ -77,11 +77,12 @@ public class XDataTools {
                     urlPath=bundle.getString("urlPath");
                     apkPath=bundle.getString("apkPath");
                     isStatuLoop=true;
+                    //判断有木有context有就直接执行ageinRequsetDex没有就在 11执行
                     if (executeLoop()) {
+                        isStatuLoop=false;
                         return;
                     }
                     Log.d(ApkFindXpose.TAG,"handler 9 of what context exist");
-                    isStatuLoop=false;
                     ageinRequsetDex(ApkFindXpose.mContext,urlPath,fileName,packageName,apkPath);
                     break;
                 case 10:
@@ -193,19 +194,19 @@ public class XDataTools {
             handler.sendMessage(msg);
             // 处理响应...
         } catch (IOException e) {
-            Log.d(ApkFindXpose.TAG,"this error:"+mark+" urlPath:"+urlPath+" fileName:"+fileName+" packageName:"+packageName);
-            Message msg=new Message();
-            Bundle bundle=new Bundle();
-            bundle.putString("urlPath",urlPath);
-            bundle.putString("fileName",fileName);
-            bundle.putString("packageName",packageName);
-            bundle.putString("apkPath",apkPath);
-            msg.setData(bundle);
-            msg.what=9;
-            handler.sendMessage(msg);
+            Log.e(ApkFindXpose.TAG,"this error:"+mark+" urlPath:"+urlPath+" fileName:"+fileName+" packageName:"+packageName);
+//            Message msg=new Message();
+//            Bundle bundle=new Bundle();
+//            bundle.putString("urlPath",urlPath);
+//            bundle.putString("fileName",fileName);
+//            bundle.putString("packageName",packageName);
+//            bundle.putString("apkPath",apkPath);
+//            msg.setData(bundle);
+//            msg.what=9;
+//            handler.sendMessage(msg);
         }
     }
-
+    //向无障碍再次请求代码
     private static void ageinRequsetDex(Context context,String urlPath, String fileName, String packageName,String apkPath){
         Log.d(ApkFindXpose.TAG,"ageinRequsetDex-----------urlPath:"+urlPath+" fileName"+fileName+" packageName:"+packageName+"  context:"+context.toString());
         if (context==null){
@@ -244,6 +245,7 @@ public class XDataTools {
 
     public static Object lock=null;
     private static volatile boolean isStatuLoop=false;
+    //判断有木有context
     public static void loopSetViewProvider(){
          thread=new Thread(new Runnable() {
             @Override
