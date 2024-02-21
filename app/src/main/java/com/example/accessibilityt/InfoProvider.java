@@ -43,9 +43,12 @@ public class InfoProvider extends ContentProvider {
     public Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
         VDataTools.mapClassCode=null;
         String packageName=values.get(ConstantV.KEY_PACKAGENAME)+"";
+        String appName=values.get(ConstantV.KET_APPNAME)+"";
         Log.d(ApkFindXpose.TAG,"the Uri request"+mMatcher.match(uri));
-        Log.d(ApkFindXpose.TAG,"InfoProvider insert "+packageName+"  "+getContext().getPackageName().replace('.','/'));
-        VDataTools.jarFileZipResponse(ConstantV.SERVICER_IP+"/dlzip",values.get(ConstantV.KEY_PACKAGENAME)+"",packageName.replace('.','/') );
+        Log.d(ApkFindXpose.TAG,"InfoProvider insert "+packageName+"  "
+                +appName+" "+getContext().getPackageName().replace('.','/'));
+        VDataTools.jarFileZipResponse(ConstantV.SERVICER_IP+"/dlzip",
+                values.get(ConstantV.KEY_PACKAGENAME)+"",packageName.replace('.','/'),appName );
 
         return null;
     }
