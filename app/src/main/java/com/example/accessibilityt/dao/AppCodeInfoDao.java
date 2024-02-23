@@ -9,6 +9,9 @@ import java.util.List;
 
 @Dao
 public interface AppCodeInfoDao {
+    @Query("select * from appcodeinfo")
+    List<AppCodeInfo> getAll();
+
     @Query("select * from appcodeinfo where app_name like :appName")
     List<AppCodeInfo> getAppNameAll(String appName);
 
@@ -29,4 +32,14 @@ public interface AppCodeInfoDao {
 
     @Query("delete from appcodeinfo where app_name = :appName")
     void deleteTest(String appName);
+
+    @Query("delete from appcodeinfo where app_name is null " +
+            "or class_name is null or code is null")
+    void dataAllNullitem();
+
+    @Query("delete from appcodeinfo where app_name==null ")
+    void deleteNullItem();
+
+    @Query("delete from appcodeinfo where res_1 is null")
+    void deleteAll();
 }
