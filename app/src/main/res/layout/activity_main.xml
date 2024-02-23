@@ -41,6 +41,15 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:onClick="startAccessibilityService"
         android:text="accessibilityStart"
+        android:id="@+id/be1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:ignore="MissingConstraints" />
+    <Button
+        app:layout_constraintTop_toBottomOf="@id/be1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:onClick="test"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         tools:ignore="MissingConstraints" />
