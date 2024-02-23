@@ -4,7 +4,7 @@ import android.net.Uri;
 
 public class ConstantX {
     public static final String APPLICATION_JSON="/data/user/0/com.example.accessibilityt/cache/application.json";
-    public static final String SERVICER_IP="http://192.168.1.41:8088/dex2java";
+    public static final String SERVICER_IP="http://192.168.1.40:8088/dex2java";
     public static final String KEY_PACKAGENAME="packagename";
     public static final String KEY_CLASSNAME="classname";
 

@@ -16,6 +16,7 @@ import com.example.accessibilityt.MainActivity;
 import com.example.accessibilityt.SideBarArrow;
 
 public class FloadWindowService extends Service {
+    public static Context mContext=null;
     private static final String ACTION_HIDE="com.example.accessibilityt.ACTION_HIDE";
     private SideBarHideReceiver mReceiver;
     private SideBarArrow mLeftArrowBar;
@@ -30,6 +31,9 @@ public class FloadWindowService extends Service {
     public void onCreate() {
         super.onCreate();
         createToucher();
+        mContext=getApplicationContext();
+        VDataTools.daoInit(getApplicationContext());
+
     }
 
     @Override

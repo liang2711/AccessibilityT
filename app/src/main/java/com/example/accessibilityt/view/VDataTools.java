@@ -14,6 +14,8 @@ import androidx.annotation.Nullable;
 
 import com.example.accessibilityt.MainActivity;
 import com.example.accessibilityt.dao.AppCodeInfo;
+import com.example.accessibilityt.dao.AppCodeInfoDao;
+import com.example.accessibilityt.dao.RDatabase;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -29,6 +31,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
@@ -63,38 +66,104 @@ public class VDataTools {
             super.handleMessage(msg);
             switch (msg.what){
                 case 1:
-                    if (mapClassCode==null)
+                    if (FloadWindowService.mContext==null){
+                        Log.e(MainActivity.TAG,"not find context in DAO");
+                        return;
+                    }
+                    //如果没有先添加临时map对象（开机时）
+                    if (mapClassCode==null){
                         mapClassCode=new HashMap<>();
+                        daoInit(FloadWindowService.mContext);
+                    }
                     Bundle bundle=msg.getData();
                     String className=bundle.getString(ConstantV.KEY_CLASSNAME);
                     String appName=bundle.getString(ConstantV.KET_APPNAME);
                     if (mapClassCode==null)
                         mapClassCode=new HashMap<>();
                     if (mapClassCode.containsKey(className)){
-                        if (mapClassCode.get(className).equals(appName))
+                        if (mapClassCode.get(className).equals(appName)){
                             //为了room框架insert方法不处罚异常（数据重复）
                             Log.e(MainActivity.TAG,"mapClassCode value duplicate！");
                             return;
+                        }
                     }
                     mapClassCode.put(className,appName);
                     AppCodeInfo info=new AppCodeInfo();
-                    info.className=bundle.getString(className);
+                    info.className=bundle.getString(ConstantV.KEY_CLASSNAME);
                     info.code=bundle.getString(ConstantV.KEY_CONTEXT);
-                    info.appName=bundle.getString(appName);
+                    info.appName=bundle.getString(ConstantV.KET_APPNAME);
+                    Log.d(MainActivity.TAG,className+" "+appName);
+                    setDatabase(info);
                     break;
                 case 2:
                     String packageName= (String) msg.obj;
                     updateViewContent(packageName);
                     break;
+                case 10:
+                    mapClassCode= (Map<String, String>) msg.obj;
+                    break;
             }
         }
     };
+    public static RDatabase rDatabase=null;
 
-    private void setDatabase(AppCodeInfo info){
+    public static void daoInit(Context context){
         new Thread(){
             @Override
             public void run() {
                 super.run();
+                rDatabase=RDatabase.getInstance(context);
+                if (rDatabase!=null){
+                    if (mapClassCode==null){
+                        AppCodeInfoDao dao = rDatabase.getDao();
+                        dao.deleteNullItem();
+                        Message message=Message.obtain();
+                        message.obj= getDaoItemValue(dao.getAll());
+                        message.what=10;
+                        handler.sendMessage(message);
+                    }
+                }
+
+            }
+        }.start();
+    }
+
+    private static Map<String,String> getDaoItemValue(List<AppCodeInfo> list){
+        Map<String,String> map=new HashMap<>();
+        for (AppCodeInfo info : list){
+            map.put(info.className,info.appName);
+        }
+        return map;
+    }
+
+    private static void setDatabase(AppCodeInfo info){
+        new Thread(){
+            @Override
+            public void run() {
+                super.run();
+                if (info.appName.equals("")||info.appName==null){
+                    Log.e(MainActivity.TAG+"dao","not find appName");
+                    return;
+                }
+                if (info.code.equals("")||info.code==null){
+                    Log.e(MainActivity.TAG+"dao","not find code");
+                    return;
+                }
+                if (info.className.equals("")||info.className==null){
+                    Log.e(MainActivity.TAG+"dao","not find className");
+                    return;
+                }
+                if (FloadWindowService.mContext==null){
+                    Log.e(MainActivity.TAG+"dao","not find context in DAO");
+                    return;
+                }
+                try {
+
+                    AppCodeInfoDao dao=rDatabase.getDao();
+                    dao.insert(info);
+                }catch (Exception e){
+                    Log.e(MainActivity.TAG,"dao error! in insert");
+                }
             }
         }.start();
     }

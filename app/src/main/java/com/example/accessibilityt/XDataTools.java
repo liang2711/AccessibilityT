@@ -43,33 +43,37 @@ public class XDataTools {
                 case 1:
                     packageName= (String) msg.obj;
                     Log.d(ApkFindXpose.TAG,"network requset end");
-                    if (thread!=null){
-                        isInterrupt=true;
-                        thread=null;
-                    }
                     if (ApkFindXpose.zipFile!=null) {
                         try {
                             ApkFindXpose.zipFile.close();
-                            if (ApkFindXpose.mContext==null&&thread==null){
-                                if (isInterrupt)
-                                    isInterrupt=false;
-                                if (isThreadActive)
-                                    isThreadActive=false;
-                                Log.d(ApkFindXpose.TAG,"context is null (updateViewContent)");
-                                lock=new Object();
-                                if (lock!=null)
-                                    loopSetViewProvider();
-                                return;
-                            }
-                            ApkFindXpose.updateViewContent(packageName);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
                     }
+                    //为了防止thread的覆盖
+                    if (thread!=null){
+                        isInterrupt=true;
+                        thread=null;
+                    }
+                    if (ApkFindXpose.mContext==null&&thread==null){
+                        //初始化
+                        if (isInterrupt)
+                            isInterrupt=false;
+                        if (isIsFinishContext)
+                            isIsFinishContext=false;
+                        Log.d(ApkFindXpose.TAG,"context is null (updateViewContent)");
+                        lock=new Object();
+                        if (lock!=null)
+                            loopSetViewProvider();
+                        return;
+                    }
+                    //数据库存储
+                    ApkFindXpose.updateViewContent(packageName);
                     break;
                 case 2:
                     break;
                 case 9:
+                    //如果请求失败重新请求（以弃用）
                     Log.d(ApkFindXpose.TAG,"handler 9 of what");
                     bundle=msg.getData();
                     fileName=bundle.getString("fileName");
@@ -108,8 +112,8 @@ public class XDataTools {
         if (ApkFindXpose.mContext==null&&thread==null){
             if (isInterrupt)
                 isInterrupt=false;
-            if (isThreadActive)
-                isThreadActive=false;
+            if (isIsFinishContext)
+                isIsFinishContext=false;
             Log.d(ApkFindXpose.TAG,"context is null (updateViewContent)");
             lock=new Object();
             if (lock!=null){
@@ -187,7 +191,7 @@ public class XDataTools {
 
             Message msg=new Message();
             msg.obj=packageName;
-            if (isEnd)
+            if (!isEnd)
                 msg.what=1;
             else
                 msg.what=0;
@@ -239,7 +243,8 @@ public class XDataTools {
         }
         return null;
     }
-    static boolean isThreadActive=false;
+    static boolean isIsFinishContext=false;
+    static boolean isFinishIcon=false;
     private static Thread thread=null;
     private static volatile boolean isInterrupt=false;
 
@@ -251,7 +256,7 @@ public class XDataTools {
             @Override
             public void run() {
                 synchronized (lock){
-                    while (!isThreadActive){
+                    while (!isIsFinishContext){
                         try {
                             if (isInterrupt)
                                 return;
@@ -263,6 +268,7 @@ public class XDataTools {
                 }
                 Message msg=new Message();
                 if (!isStatuLoop){
+                    //当context被hook到时调用
                     msg.what=10;
                 }else {
                     msg.what=11;
