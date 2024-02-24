@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="180dp"
+    android:layout_marginTop="12dp"
+    android:layout_height="wrap_content">
+    <TextView
+        android:textStyle="bold"
+        android:gravity="center"
+        android:textSize="18dp"
+        android:id="@+id/a_list_item_tv"
+        android:ellipsize="none"
+        android:inputType="textMultiLine"
+        android:singleLine="false"
+        tools:ignore="MissingConstraints"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+</LinearLayout>

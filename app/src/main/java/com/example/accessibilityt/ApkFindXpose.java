@@ -10,9 +10,13 @@ import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.nfc.Tag;
+import android.os.Build;
 import android.util.Log;
 
 import com.example.accessibilityt.xposed.ConstantX;
@@ -48,6 +52,7 @@ public class ApkFindXpose implements IXposedHookLoadPackage {
     static boolean isExists=false;
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam loadPackageParam) throws Throwable {
+        Log.d(ApkFindXpose.TAG,loadPackageParam.packageName);
         if (loadPackageParam.packageName.contains("android")) {
             return;
         }
@@ -58,16 +63,14 @@ public class ApkFindXpose implements IXposedHookLoadPackage {
                 Iterator<String> it=jsonObject.keys();
                 while (it.hasNext()){
                     String key=it.next();
-                    Log.d(TAG,"ApkFindXposed_create_json_key : "+key);
-                    if (key.equals(loadPackageParam.packageName)||it.next().contains(loadPackageParam.packageName))
+                    if (key.equals(loadPackageParam.packageName)||key.contains(loadPackageParam.packageName)){
+                        Log.d(TAG,"ApkFindXposed_create_json_key  contains: "+key);
+                    }
                         return;
                 }
             }
         }
 
-
-
-        Log.d(TAG,"ApkFindXposed_create");
         String clzloader = loadPackageParam.classLoader.toString();
         if (lastPackageName.equals(loadPackageParam.packageName)){
             hookTime++;
@@ -76,37 +79,46 @@ public class ApkFindXpose implements IXposedHookLoadPackage {
                 return;
             }
         }
-        getApplicationIcon(loadPackageParam);
         getContext(loadPackageParam);
-//        getApkFile(loadPackageParam,clzloader,"main");
+        getApkFile(loadPackageParam,clzloader,"main");
     }
 
-    static String base64Icon;
     //将img转为bit给json文件
-    private void getApplicationIcon(XC_LoadPackage.LoadPackageParam param){
-        XposedHelpers.findAndHookMethod(ApplicationInfo.class, "loadIcon", PackageManager.class, new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                super.afterHookedMethod(param);
-                Drawable icon= (Drawable) param.getResult();
-                Bitmap bitmap=((BitmapDrawable)icon).getBitmap();
-                ByteArrayOutputStream stream=new ByteArrayOutputStream();
-                bitmap.compress(Bitmap.CompressFormat.PNG,100,stream);
-                byte[] byteArray= stream.toByteArray();
+    private static String getApplicationIcon(Context context){
+        PackageManager packageManager=context.getPackageManager();
+        ApplicationInfo info=null;
+        try {
+            info=packageManager.getApplicationInfo(context.getPackageName(),0);
+        } catch (PackageManager.NameNotFoundException e) {
+            return "localIconPath1="+ConstantX.APPLICATION_ICON_DEFAULT;
+        }
+        Drawable icon=info.loadIcon(packageManager);
 
-                //将 Drawable 转换为 Base64 编码的字符串
-                base64Icon = Base64.encodeToString(byteArray, Base64.DEFAULT);
+        if (info==null||icon==null){
+            return "localIconPath1="+ConstantX.APPLICATION_ICON_DEFAULT;
+        }
+        Bitmap bitmap;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                icon instanceof AdaptiveIconDrawable){
+            bitmap = Bitmap.createBitmap(icon.getIntrinsicWidth(), icon.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            icon.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+            icon.draw(canvas);
+        }else {
+            bitmap=((BitmapDrawable) icon).getBitmap();
+        }
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        byte[] byteArray = stream.toByteArray();
 
-                if (base64Icon!=null){
-                    Log.d(TAG,"img finish");
-                }
-            }
-        });
+        // 或者将 Drawable 转换为 Base64 编码的字符串
+        String base64String = Base64.encodeToString(byteArray, Base64.DEFAULT);
+        if (base64String==null)
+            return "localIconPath1="+ConstantX.APPLICATION_ICON_DEFAULT;
+        return base64String;
     }
     private void getApkFile(XC_LoadPackage.LoadPackageParam loadPackageParam,String clzloader,String mark){
         String apkPath = XDataTools.displayApkPath(clzloader);
-        Log.d(TAG, "clzloader:" + clzloader + "  apkPath:" + apkPath);
-        Log.d(TAG, apkPath);
         if (!apkPath.endsWith(".apk")){
             Log.e(TAG,"this error apkPath not contain .apk");
             return;
@@ -122,7 +134,7 @@ public class ApkFindXpose implements IXposedHookLoadPackage {
             throw new RuntimeException(e);
         }
         Enumeration<? extends ZipEntry> entries = zipFile.entries();
-
+        Log.d(ApkFindXpose.TAG,loadPackageParam.packageName+"    getApkFile");
         while (entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
             String entryName = entry.getName();
@@ -136,8 +148,10 @@ public class ApkFindXpose implements IXposedHookLoadPackage {
                 throw new RuntimeException(e);
             }
             //this not Constant.url
-            XDataTools.extraDoPost( ConstantX.SERVICER_IP+"/outDex",entryName,loadPackageParam.packageName,inputStream,entries.hasMoreElements(),apkPath,mark);
+            XDataTools.extraDoPost( ConstantX.SERVICER_IP+"/outDex",entryName,loadPackageParam.packageName,inputStream,apkPath,mark);
         }
+        //updateViewContent调用
+        XDataTools.extraDoPost( null,null,loadPackageParam.packageName,null,null,null);
     }
 
     private void getContext(XC_LoadPackage.LoadPackageParam param){
@@ -179,15 +193,20 @@ public class ApkFindXpose implements IXposedHookLoadPackage {
             return;
         }
         String appName=getAppName(mContext);
+        String icon=getApplicationIcon(mContext);
         if (appName==null||appName.equals("")){
             Log.e(TAG,"appName is null!");
             return;
         }
-//        Log.e(TAG,"appName is"+appName+"  packageName: "+packagheName);
+        Log.e(TAG,"updateViewContent   appName is"+appName+"  packageName: "+packagheName);
+        if (packagheName==null){
+            packagheName=mContext.getPackageName();
+        }
         ContentResolver mContentResolver=mContext.getContentResolver();
         ContentValues values=new ContentValues();
         values.put(ConstantX.KEY_PACKAGENAME,packagheName);
         values.put(ConstantX.KET_APPNAME,appName);
+        values.put(ConstantX.KEY_ICON,icon);
         mContentResolver.insert(ConstantX.CONTENT_URI,values);
     }
 }

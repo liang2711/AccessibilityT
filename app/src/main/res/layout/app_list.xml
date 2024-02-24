@@ -4,11 +4,18 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <com.scwang.smart.refresh.layout.SmartRefreshLayout
+        android:background="@android:color/white"
+        app:srlPrimaryColor="@color/colorPrimary"
+        app:srlAccentColor="@android:color/white"
+        app:srlEnableLoadMore="false"
         android:id="@+id/a_list_rl"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent">
+        <com.example.accessibilityt.refreshear.FunGameBattleCityHeader
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/a_list_rv"
             android:layout_width="match_parent"

@@ -152,7 +152,12 @@ public class SideBarContent implements View.OnClickListener {
 
     //我要设置的功能
     private void annotationGo() {
+        Intent intent=new Intent(mContext, AppNameListActivity.class);
         Toast.makeText(mContext,"waawdawdawd",Toast.LENGTH_SHORT).show();
+        if((Build.VERSION.SDK_INT <= Build.VERSION_CODES.M) || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)){
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
+        mContext.startActivity(intent);
     }
 
     void removeOrSendMsg(boolean remove, boolean send) {

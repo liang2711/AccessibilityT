@@ -53,10 +53,10 @@ public class InfoProvider extends ContentProvider {
         VDataTools.mapClassCode=null;
         String packageName=values.get(ConstantV.KEY_PACKAGENAME)+"";
         String appName=values.get(ConstantV.KET_APPNAME)+"";
-        Log.d(MainActivity.TAG,"the Uri request"+mMatcher.match(uri));
+        String icon=values.get(ConstantV.KEY_ICON)+"";
         Log.d(MainActivity.TAG,"InfoProvider insert "+packageName+"  "
-                +appName+" "+getContext().getPackageName().replace('.','/'));
-        if (!setJson(appName,packageName)){
+                +appName+" "+getContext().getPackageName().replace('.','/')+"  "+icon);
+        if (!setJson(appName,packageName,icon)){
             Log.e(MainActivity.TAG,"the provide error");
             return null;
         }
@@ -76,7 +76,11 @@ public class InfoProvider extends ContentProvider {
         return 0;
     }
 
-    boolean setJson(String className,String packageName){
+    boolean setJson(String className,String packageName,String icon){
+        if (className==null||packageName==null||icon==null){
+            Log.e(MainActivity.TAG,"setJson data is null");
+            return false;
+        }
         if (FloadWindowService.mContext==null){
             Log.e(MainActivity.TAG,"not find context in DAO");
             return false;
@@ -88,12 +92,15 @@ public class InfoProvider extends ContentProvider {
             }else {
                 jsonObject=new JSONObject();
             }
-            jsonObject.put(packageName,className);
+            JSONObject value=new JSONObject();
+            value.put(className,icon);
+            jsonObject.put(packageName,value);
             Files.write(Paths.get(ConstantV.APPLICATION_JSON),jsonObject.toString().getBytes());
         }catch (Exception e){
             e.printStackTrace();
             return false;
         }
+        Log.d(MainActivity.TAG,"json data success write");
         return true;
     }
 }

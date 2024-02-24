@@ -39,6 +39,7 @@ public class XDataTools {
             super.handleMessage(msg);
             switch (msg.what){
                 case 0:
+                    Log.d(ApkFindXpose.TAG,"network requset ing");
                     break;
                 case 1:
                     packageName= (String) msg.obj;
@@ -50,23 +51,7 @@ public class XDataTools {
                             throw new RuntimeException(e);
                         }
                     }
-                    //为了防止thread的覆盖
-                    if (thread!=null){
-                        isInterrupt=true;
-                        thread=null;
-                    }
-                    if (ApkFindXpose.mContext==null&&thread==null){
-                        //初始化
-                        if (isInterrupt)
-                            isInterrupt=false;
-                        if (isIsFinishContext)
-                            isIsFinishContext=false;
-                        Log.d(ApkFindXpose.TAG,"context is null (updateViewContent)");
-                        lock=new Object();
-                        if (lock!=null)
-                            loopSetViewProvider();
-                        return;
-                    }
+                    if (executeLoop()) return;
                     //数据库存储
                     ApkFindXpose.updateViewContent(packageName);
                     break;
@@ -93,6 +78,7 @@ public class XDataTools {
                     ApkFindXpose.updateViewContent(ApkFindXpose.mContext.getPackageName());
                     break;
                 case 11:
+                    //弃用
                     Log.d(ApkFindXpose.TAG,"handler 11 of what");
                     bundle=msg.getData();
                     fileName=bundle.getString("fileName");
@@ -104,7 +90,9 @@ public class XDataTools {
             }
         }
     };
+
     private static boolean executeLoop(){
+        //为了防止thread的覆盖
         if (thread!=null){
             isInterrupt=true;
             thread=null;
@@ -123,21 +111,26 @@ public class XDataTools {
         }
         return false;
     }
-    public static void extraDoPost(String urlPath, String fileName, String packageName, InputStream inputStream,boolean isEnd,String apkPath,String mark){
+    public static void extraDoPost(String urlPath, String fileName, String packageName, InputStream inputStream,String apkPath,String mark){
         new Thread(){
             @Override
             public void run() {
                 super.run();
-                doPost(urlPath,fileName,packageName,inputStream,isEnd,apkPath,mark);
+                if (urlPath==null){
+                    Message msg=new Message();
+                    msg.obj=packageName;
+                    msg.what=1;
+                    handler.sendMessage(msg);
+                    return;
+                }
+                doPost(urlPath,fileName,packageName,inputStream,apkPath,mark);
             }
         }.start();
     }
-    private static void doPost(String urlPath,String fileName,String packageName,InputStream inputStream,boolean isEnd,String apkPath,String mark){
-        Log.d(ApkFindXpose.TAG,urlPath+" "+fileName+" "+packageName);
+    private static void doPost(String urlPath,String fileName,String packageName,InputStream inputStream,String apkPath,String mark){
         final String LINE_FEED = "\r\n";
         final String BOUNDARY = "#";
         try {
-//            Log.d(ApkFindXpose.TAG,"----------------------1");
             URL url = new URL(urlPath);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setDoOutput(true);
@@ -145,13 +138,11 @@ public class XDataTools {
             connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + BOUNDARY);
             OutputStream outputStream = connection.getOutputStream();
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, "UTF-8"), true);
-//            Log.d(ApkFindXpose.TAG,"----------------------2");
             // 添加表单字段参数
             writer.append("--" + BOUNDARY).append(LINE_FEED);
             writer.append("Content-Disposition: form-data; name=\"packageName\"").append(LINE_FEED);
             writer.append(LINE_FEED);
             writer.append(packageName).append(LINE_FEED);
-//            Log.d(ApkFindXpose.TAG,"----------------------3");
             // 添加文件参数
             writer.append("--" + BOUNDARY).append(LINE_FEED);
             writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"" + fileName + "\"").append(LINE_FEED);
@@ -170,9 +161,10 @@ public class XDataTools {
             writer.close();
 
             int responseCode = connection.getResponseCode();
-//            Log.d(ApkFindXpose.TAG,responseCode+" ----------------------------4");
             if (responseCode!=200){
                 Log.d(ApkFindXpose.TAG,packageName+" "+fileName+" requstion error");
+                Log.e(ApkFindXpose.TAG,"this error:"+mark+" urlPath:"+urlPath+" fileName:"+fileName+" packageName:"+packageName);
+                return;
             }
             InputStream read=null;
             if (responseCode>=HttpURLConnection.HTTP_BAD_REQUEST)
@@ -187,14 +179,10 @@ public class XDataTools {
                 response.append(line);
             }
             reader.close();
-            Log.d(ApkFindXpose.TAG,response.toString());
+
 
             Message msg=new Message();
-            msg.obj=packageName;
-            if (!isEnd)
-                msg.what=1;
-            else
-                msg.what=0;
+            msg.what=0;
             handler.sendMessage(msg);
             // 处理响应...
         } catch (IOException e) {
@@ -210,9 +198,9 @@ public class XDataTools {
 //            handler.sendMessage(msg);
         }
     }
-    //向无障碍再次请求代码
+    //向无障碍再次请求代码(已弃用)
     private static void ageinRequsetDex(Context context,String urlPath, String fileName, String packageName,String apkPath){
-        Log.d(ApkFindXpose.TAG,"ageinRequsetDex-----------urlPath:"+urlPath+" fileName"+fileName+" packageName:"+packageName+"  context:"+context.toString());
+        Log.d(ApkFindXpose.TAG,"packageName:"+packageName);
         if (context==null){
             Log.d(ApkFindXpose.TAG,"ageinRequsetDex-----------end");
             return;
@@ -244,7 +232,6 @@ public class XDataTools {
         return null;
     }
     static boolean isIsFinishContext=false;
-    static boolean isFinishIcon=false;
     private static Thread thread=null;
     private static volatile boolean isInterrupt=false;
 
@@ -266,6 +253,7 @@ public class XDataTools {
                         }
                     }
                 }
+                Log.d(ApkFindXpose.TAG,"loop end");
                 Message msg=new Message();
                 if (!isStatuLoop){
                     //当context被hook到时调用

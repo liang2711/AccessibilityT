@@ -2,13 +2,19 @@ package com.example.accessibilityt;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.example.accessibilityt.dao.AppCodeInfo;
@@ -24,6 +30,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -32,10 +40,26 @@ import java.util.Iterator;
 public class MainActivity extends AppCompatActivity {
     Intent serviceIn=null;
     public static final String TAG="ACCESSIBILITY";
+    @SuppressLint("WrongThread")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //创建默认图片文件
+        File icon=new File(ConstantV.APPLICATION_ICON_DEFAULT);
+        if (!icon.exists()){
+            Drawable drawable=getResources().getDrawable(R.drawable.youki);
+            Bitmap bitmap=((BitmapDrawable)drawable).getBitmap();
+            try {
+                FileOutputStream fos=new FileOutputStream(icon);
+                bitmap.compress(Bitmap.CompressFormat.PNG,100,fos);
+                fos.flush();
+                fos.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         PermissionUtil.requsetFloatWindowPermission(this);
     }
     public void startServcie(View view){
