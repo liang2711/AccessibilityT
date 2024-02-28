@@ -6,49 +6,53 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
     <TextView
+        android:textStyle="bold"
+        android:textSize="26dp"
         android:id="@+id/assnte_tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:text="Welcome App Hook"
+        android:layout_marginTop="182dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-    <Button
-        android:onClick="startServcie"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/assnte_tv"
-        android:text="start"
-        android:id="@+id/btn_start"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/auxiliary_view"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:ignore="MissingConstraints" />
-    <Button
-        android:id="@+id/btn_stop"
-        android:onClick="stopService"
+        android:orientation="horizontal"
+        android:gravity="center"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_start"
-        android:text="stop"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        tools:ignore="MissingConstraints" />
+        tools:ignore="MissingConstraints">
+        <Button
+            android:layout_marginLeft="6dp"
+            android:onClick="startServcie"
+            android:text="开启hook服务"
+            android:id="@+id/btn_start"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="MissingConstraints" />
+        <Button
+            android:layout_marginLeft="6dp"
+            android:id="@+id/btn_stop"
+            android:onClick="stopService"
+            android:text="停止hook服务"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="MissingConstraints" />
+    </LinearLayout>
+
     <Button
-        app:layout_constraintTop_toBottomOf="@id/btn_stop"
+
+        app:layout_constraintTop_toBottomOf="@id/auxiliary_view"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:onClick="startAccessibilityService"
-        android:text="accessibilityStart"
+        android:onClick="startDaoAll"
+        android:text="查看hook app代码"
         android:id="@+id/be1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        tools:ignore="MissingConstraints" />
-    <Button
-        app:layout_constraintTop_toBottomOf="@id/be1"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:onClick="test"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         tools:ignore="MissingConstraints" />

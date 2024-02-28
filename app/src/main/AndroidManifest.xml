@@ -46,6 +46,7 @@
         </service>
         <activity android:name=".AppNameListActivity"/>
         <activity android:name=".view.CcodeShowView"/>
+        <activity android:name=".DaoListActivity"/>
         <provider
             android:exported="true"
             android:authorities="com.example.infoprovider"

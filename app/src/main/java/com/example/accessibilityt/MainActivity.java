@@ -95,71 +95,8 @@ public class MainActivity extends AppCompatActivity {
             }
         }.start();
     }
-
-    RDatabase database=null;
-    public void test(View view){
-
-//        PackageManager packageManager=this.getPackageManager();
-//        ApplicationInfo info= null;
-//        try {
-//            info = packageManager.getApplicationInfo(this.getPackageName(),0);
-//        } catch (PackageManager.NameNotFoundException e) {
-//            throw new RuntimeException(e);
-//        }
-        String appName="LinuxApiTest";
-//        appName=(String) packageManager.getApplicationLabel(info);
-//        Log.d(MainActivity.TAG,"dwaaaaaaaaaaaaaaaaaaaaaaaaaa   onclick  "+appName);
-
-        new Thread(){
-            @Override
-            public void run() {
-                super.run();
-                if (database==null){
-                    if (VDataTools.rDatabase!=null)
-                        database=VDataTools.rDatabase;
-                    else {
-                        if (FloadWindowService.mContext!=null)
-                            database=RDatabase.getInstance(FloadWindowService.mContext);
-                        else database=RDatabase.getInstance(getApplicationContext());
-                    }
-                }
-                AppCodeInfoDao dao=database.getDao();
-                Log.d(MainActivity.TAG,"dwaaaaaaaaaaaaaaaaaaaaaaaaaa");
-                dao.delete(appName);
-            }
-        }.start();
-//        if (new File(ConstantV.APPLICATION_JSON).exists()){
-//            Log.d(MainActivity.TAG,"dwaaaaaaaaaaaaaaaaaaaaaaaaaa   onclick  file exists");
-//            try {
-//                String packageName=getPackageName();
-//                JSONObject jsonObject=new JSONObject(new String(Files.readAllBytes(Paths.get(ConstantV.APPLICATION_JSON))));
-//                if (jsonObject!=null) {
-//                    return;
-//                }
-//                Iterator<String> it=jsonObject.keys();
-//                while (it.hasNext()){
-//                    String key=it.next();
-//                    Log.d(TAG,"ApkFindXposed_create_json_key : "+key);
-//                }
-//                appName=jsonObject.getString(packageName);
-//                jsonObject.remove(packageName);
-//
-//                String key;
-//                it=jsonObject.keys();
-//                while (it.hasNext()){
-//                    key=it.next();
-//                    Log.d(TAG,"ApkFindXposed_create_json_key : "+key);
-//                }
-//
-//            } catch (JSONException e) {
-//                throw new RuntimeException(e);
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
-//
-//        }
-    }
-    public void startAccessibilityService(View view){
+    public void startDaoAll(View view){
+        //这是请求无障碍的权限
 //        if (PermissionUtil.isStartFloadWindowService(this)){
 //            if (serviceIn==null)
 //                serviceIn=new Intent(this,FloadWindowService.class);
@@ -170,27 +107,11 @@ public class MainActivity extends AppCompatActivity {
 //            PermissionUtil.requestAccessibilityServicePermission(this,HongBaoService.class);
 //            return;
 //        }
-        new Thread(){
-            @Override
-            public void run() {
-                super.run();
-                Log.d(MainActivity.TAG,"dwaaaaaaaaaaaaaaaaaaaaaaaaaa   startAccessibilityService  ");
-                if (database==null){
-                    if (VDataTools.rDatabase!=null)
-                        database=VDataTools.rDatabase;
-                    else {
-                        if (FloadWindowService.mContext!=null)
-                            database=RDatabase.getInstance(FloadWindowService.mContext);
-                        else database=RDatabase.getInstance(getApplicationContext());
-                    }
-                }
-                AppCodeInfoDao dao=database.getDao();
-                if (dao==null) return;
-                for (AppCodeInfo info:dao.getAll()){
-                    Log.d(MainActivity.TAG+"main_dao",info.appName+"   "+info.className+"  "+info.code);
-                }
-            }
-        }.start();
-
+        if (FloadWindowService.mContext==null){
+            Toast.makeText(this,"请先打开hook服务",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent intent=new Intent(this,DaoListActivity.class);
+        startActivity(intent);
     }
 }
