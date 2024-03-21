@@ -120,6 +120,7 @@ public class AppNameAdapter extends RecyclerView.Adapter<AppNameAdapter.AppViewH
                 Intent intent=new Intent(mContext,CcodeShowView.class);
                 Bundle bundle = new Bundle();
                 bundle.putString("appName", info.appName); // 设置要传递的数据
+                bundle.putString("packageName",info.packageName);
                 intent.putExtras(bundle);
                 Log.d("CcodeShowView","appNameList click appName:"+info.appName);
                 if((Build.VERSION.SDK_INT <= Build.VERSION_CODES.M) || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)){

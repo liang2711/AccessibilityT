@@ -42,18 +42,18 @@ public class XDataTools {
                     Log.d(ApkFindXpose.TAG,"network requset ing");
                     break;
                 case 1:
-                    packageName= (String) msg.obj;
-                    Log.d(ApkFindXpose.TAG,"network requset end");
-                    if (ApkFindXpose.zipFile!=null) {
-                        try {
-                            ApkFindXpose.zipFile.close();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                    if (executeLoop()) return;
-                    //数据库存储
-                    ApkFindXpose.updateViewContent(packageName);
+//                    packageName= (String) msg.obj;
+//                    Log.d(ApkFindXpose.TAG,"network requset end");
+//                    if (ApkFindXpose.zipFile!=null) {
+//                        try {
+//                            ApkFindXpose.zipFile.close();
+//                        } catch (IOException e) {
+//                            throw new RuntimeException(e);
+//                        }
+//                    }
+//                    if (executeLoop()) return;
+//                    //数据库存储
+//                    ApkFindXpose.updateViewContent(packageName);
                     break;
                 case 2:
                     break;
@@ -111,26 +111,48 @@ public class XDataTools {
         }
         return false;
     }
-    public static void extraDoPost(String urlPath, String fileName, String packageName, InputStream inputStream,String apkPath,String mark){
-        new Thread(){
+    public static void extraDoPost(String urlPath, String fileName, String packageName, byte[] inputStream,String apkPath,String mark){
+        if (urlPath==null){
+            Log.d(ApkFindXpose.TAG,"network requset end");
+            if (ApkFindXpose.zipFile!=null) {
+                try {
+                    ApkFindXpose.zipFile.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            if (executeLoop()) return;
+            //数据库存储
+            ApkFindXpose.updateViewContent(packageName);
+            return;
+        }
+        if (ApkFindXpose.executorService!=null){
+            ApkFindXpose.executorService.execute(new Runnable() {
+                @Override
+                public void run() {
+                    doPost(urlPath,fileName,packageName,inputStream,apkPath,mark);
+                }
+            });
+        }else new Thread(){
             @Override
             public void run() {
                 super.run();
-                if (urlPath==null){
-                    Message msg=new Message();
-                    msg.obj=packageName;
-                    msg.what=1;
-                    handler.sendMessage(msg);
-                    return;
-                }
+//                if (urlPath==null){
+//                    Message msg=new Message();
+//                    msg.obj=packageName;
+//                    msg.what=1;
+//                    handler.sendMessage(msg);
+//                    return;
+//                }
                 doPost(urlPath,fileName,packageName,inputStream,apkPath,mark);
             }
         }.start();
     }
-    private static void doPost(String urlPath,String fileName,String packageName,InputStream inputStream,String apkPath,String mark){
+    private static void doPost(String urlPath,String fileName,String packageName,byte[] inputStream,String apkPath,String mark){
         final String LINE_FEED = "\r\n";
         final String BOUNDARY = "#";
         try {
+            Log.d(ApkFindXpose.TAG,"doPost");
             URL url = new URL(urlPath);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setDoOutput(true);
@@ -149,13 +171,13 @@ public class XDataTools {
             writer.append("Content-Type: " + URLConnection.guessContentTypeFromName(fileName)).append(LINE_FEED);
             writer.append(LINE_FEED);
             writer.flush();
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-            }
+//            byte[] buffer = new byte[4096];
+//            int bytesRead;
+//            while ((bytesRead = inputStream.read(buffer)) != -1) {
+//                outputStream.write(buffer, 0, bytesRead);
+//            }
+            outputStream.write(inputStream);
             outputStream.flush();
-            inputStream.close();
             writer.append(LINE_FEED);
             writer.append("--" + BOUNDARY + "--").append(LINE_FEED);
             writer.close();
@@ -187,17 +209,9 @@ public class XDataTools {
             // 处理响应...
         } catch (IOException e) {
             Log.e(ApkFindXpose.TAG,"this error:"+mark+" urlPath:"+urlPath+" fileName:"+fileName+" packageName:"+packageName);
-//            Message msg=new Message();
-//            Bundle bundle=new Bundle();
-//            bundle.putString("urlPath",urlPath);
-//            bundle.putString("fileName",fileName);
-//            bundle.putString("packageName",packageName);
-//            bundle.putString("apkPath",apkPath);
-//            msg.setData(bundle);
-//            msg.what=9;
-//            handler.sendMessage(msg);
         }
     }
+
     //向无障碍再次请求代码(已弃用)
     private static void ageinRequsetDex(Context context,String urlPath, String fileName, String packageName,String apkPath){
         Log.d(ApkFindXpose.TAG,"packageName:"+packageName);
@@ -237,6 +251,7 @@ public class XDataTools {
 
     public static Object lock=null;
     private static volatile boolean isStatuLoop=false;
+    private static int threadTime=1;
     //判断有木有context
     public static void loopSetViewProvider(){
          thread=new Thread(new Runnable() {
@@ -250,6 +265,16 @@ public class XDataTools {
                             lock.wait();
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
+                        }
+                        try {
+                            threadTime++;
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        if (threadTime>=20){
+                            threadTime=1;
+                            return;
                         }
                     }
                 }

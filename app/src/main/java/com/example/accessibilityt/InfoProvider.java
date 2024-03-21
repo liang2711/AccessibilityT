@@ -12,12 +12,15 @@ import androidx.annotation.Nullable;
 
 import com.example.accessibilityt.view.ConstantV;
 import com.example.accessibilityt.view.FloadWindowService;
+import com.example.accessibilityt.view.SPUtils;
 import com.example.accessibilityt.view.VDataTools;
 import com.example.accessibilityt.xposed.ConstantX;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Iterator;
@@ -54,14 +57,22 @@ public class InfoProvider extends ContentProvider {
         String packageName=values.get(ConstantV.KEY_PACKAGENAME)+"";
         String appName=values.get(ConstantV.KET_APPNAME)+"";
         String icon=values.get(ConstantV.KEY_ICON)+"";
-        Log.d(MainActivity.TAG,"InfoProvider insert "+packageName+"  "
-                +appName+" "+getContext().getPackageName().replace('.','/')+"  "+icon);
-        if (!setJson(appName,packageName,icon)){
+//        Log.d(MainActivity.TAG,"InfoProvider insert "+packageName+"  "
+//                +appName+" "+getContext().getPackageName().replace('.','/')+"  "+icon);
+        if (!setAJson(appName,packageName,icon)){
             Log.e(MainActivity.TAG,"the provide error");
             return null;
         }
-        VDataTools.jarFileZipResponse(ConstantV.SERVICER_IP+"/dlzip",
-                values.get(ConstantV.KEY_PACKAGENAME)+"",packageName.replace('.','/'),appName );
+        Log.d(MainActivity.TAG,"provider module:"+VDataTools.setMJson());
+        if (VDataTools.setMJson()){
+            //本地
+            VDataTools.jarFileZipResponse(ConstantV.SERVICER_IP+"/dlzip",
+                    packageName,packageName.replace('.','/'),appName,".jar" );
+        }else {
+            //远程
+            VDataTools.all(ConstantV.SERVICER_IP+"/all",packageName);
+        }
+
 
         return null;
     }
@@ -76,7 +87,7 @@ public class InfoProvider extends ContentProvider {
         return 0;
     }
 
-    boolean setJson(String className,String packageName,String icon){
+    boolean setAJson(String className,String packageName,String icon){
         if (className==null||packageName==null||icon==null){
             Log.e(MainActivity.TAG,"setJson data is null");
             return false;

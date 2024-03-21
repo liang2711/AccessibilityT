@@ -36,7 +36,7 @@ public class CcodeShowView extends AppCompatActivity {
     public static DrawerLayout drawerLayout;
     public static ListView listView;
     static CcodeAdapter ccodeAdapter=null;
-    private static Handler handler=new Handler(Looper.getMainLooper()){
+    public static Handler handler=new Handler(Looper.getMainLooper()){
         @Override
         public void handleMessage(@NonNull Message msg) {
             super.handleMessage(msg);
@@ -63,8 +63,10 @@ public class CcodeShowView extends AppCompatActivity {
         drawerLayout=findViewById(R.id.c_dl);
         Bundle bundle = getIntent().getExtras();
         String appName=null;
+        String packageName=null;
         if (bundle != null) {
             appName = bundle.getString("appName"); // 获取传递的数据
+            packageName=bundle.getString("packageName");
         }
         CNameDrawerFragment contentFragment = new CNameDrawerFragment();
         FragmentManager fm = getSupportFragmentManager();
@@ -74,9 +76,9 @@ public class CcodeShowView extends AppCompatActivity {
         ccodeAdapter=new CcodeAdapter(this,list);
         listView.setAdapter(ccodeAdapter);
         Log.d(MainActivity.TAG,"ccodeshowview onCreate appName "+appName);
-        getAppListData(appName);
+        getAppListData(appName,packageName);
     }
-    private void getAppListData(String appName){
+    private void getAppListData(String appName,String packageName){
         if (VDataTools.rDatabase==null){
             VDataTools.daoInit(FloadWindowService.mContext);
         }
@@ -92,11 +94,18 @@ public class CcodeShowView extends AppCompatActivity {
                     Log.d(AppNameListActivity.TAG,"database table Query fail :"+appName+" in ccodeshowview");
                 }
                 Log.d(AppNameListActivity.TAG,"getAppListData CcodeShowView:"+appName);
+
                 Message message=Message.obtain();
                 Bundle bundle=new Bundle();
                 bundle.putParcelableArrayList("list",new ArrayList<>(list));
                 message.setData(bundle);
                 handler.sendMessage(message);
+
+                if (!VDataTools.setMJson()){
+                    if (list==null) list=new ArrayList<>();
+                    VDataTools.javaFileZipResponse(ConstantV.SERVICER_IP+"/dlzip",packageName,".java",appName,list);
+                }
+
             }
         }.start();
     }

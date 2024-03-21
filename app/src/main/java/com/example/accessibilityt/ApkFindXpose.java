@@ -33,6 +33,8 @@ import java.nio.file.Paths;
 import android.util.Base64;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -50,6 +52,7 @@ public class ApkFindXpose implements IXposedHookLoadPackage {
     static ZipFile zipFile;
     static JSONObject jsonObject=null;
     static boolean isExists=false;
+    static ExecutorService executorService= Executors.newFixedThreadPool(3);
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam loadPackageParam) throws Throwable {
         Log.d(ApkFindXpose.TAG,loadPackageParam.packageName);
@@ -110,7 +113,6 @@ public class ApkFindXpose implements IXposedHookLoadPackage {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
         byte[] byteArray = stream.toByteArray();
-
         // 或者将 Drawable 转换为 Base64 编码的字符串
         String base64String = Base64.encodeToString(byteArray, Base64.DEFAULT);
         if (base64String==null)
@@ -140,15 +142,19 @@ public class ApkFindXpose implements IXposedHookLoadPackage {
             String entryName = entry.getName();
             if (!entryName.contains(".dex"))
                 continue;
+            if (entryName.equals("classes.dex"))
+                continue;
 
             InputStream inputStream= null;
+            byte[] bytes=null;
             try {
                 inputStream = zipFile.getInputStream(entry);
+                bytes=b2Stream(inputStream);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
             //this not Constant.url
-            XDataTools.extraDoPost( ConstantX.SERVICER_IP+"/outDex",entryName,loadPackageParam.packageName,inputStream,apkPath,mark);
+            XDataTools.extraDoPost( ConstantX.SERVICER_IP+"/outDex",entryName,loadPackageParam.packageName,bytes,apkPath,mark);
         }
         //updateViewContent调用
         XDataTools.extraDoPost( null,null,loadPackageParam.packageName,null,null,null);
@@ -185,6 +191,16 @@ public class ApkFindXpose implements IXposedHookLoadPackage {
             throw new RuntimeException(e);
         }
         return (String) packageManager.getApplicationLabel(info);
+    }
+
+    public static byte[] b2Stream(InputStream jarInputStream) throws IOException {
+        ByteArrayOutputStream byteArrayOutputStream=new ByteArrayOutputStream();
+        byte[] buffer=new byte[4096];
+        int bytesRead;
+        while ((bytesRead = jarInputStream.read(buffer)) != -1) {
+            byteArrayOutputStream.write(buffer, 0, bytesRead);
+        }
+        return byteArrayOutputStream.toByteArray();
     }
 
     public static void updateViewContent(String packagheName){

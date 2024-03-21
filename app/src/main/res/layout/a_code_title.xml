@@ -5,6 +5,7 @@
     android:layout_height="48dp"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 <ImageView
+    android:src="@drawable/menu"
     android:id="@+id/a_c_t_img"
     android:background="#d3d3d3"
     android:layout_marginLeft="26dp"

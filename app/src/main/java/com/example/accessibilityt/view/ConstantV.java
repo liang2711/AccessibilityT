@@ -4,10 +4,13 @@ import android.net.Uri;
 
 public class ConstantV {
     public static final String APPLICATION_JSON="/data/user/0/com.example.accessibilityt/cache/application.json";
+    public static final String MODULE_JSON="/data/user/0/com.example.accessibilityt/cache/module.json";
     public static final String APPLICATION_ICON_DEFAULT="/data/user/0/com.example.accessibilityt/cache/youki.png";
-    public static final String SERVICER_IP="http://192.168.1.40:8088/dex2java";
+    public static final String SERVICER_IP="http://192.168.1.38:8088/dex2java";
     public static final String KEY_NAME="xposed";
     public static final String KET_APPNAME="appname";
+
+    public static final String KET_MODULE="module";
     public static final String KEY_ICON="icon";
     public static final int ITEM=1;
 
