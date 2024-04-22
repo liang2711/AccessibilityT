@@ -1,19 +1,26 @@
 package com.example.accessibilityt;
 
+import android.accessibilityservice.AccessibilityService;
 import android.annotation.SuppressLint;
+import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.example.accessibilityt.view.FloadWindowService;
 import com.example.accessibilityt.view.PermissionUtil;
+
+import java.io.IOException;
 
 
 public class SideBarContent implements View.OnClickListener {
@@ -21,7 +28,6 @@ public class SideBarContent implements View.OnClickListener {
     private LinearLayout mContentView;
     private WindowManager mWindowManager;
     private LinearLayout mArrowView;
-    private HongBaoService mSideBarService;
     private ControlBar mControlBar;
     private LinearLayout mSeekBarView;
     private int mTagTemp = -1;
@@ -44,12 +50,10 @@ public class SideBarContent implements View.OnClickListener {
     LinearLayout getView(Context context,
                          WindowManager windowManager,
                          WindowManager.LayoutParams params,
-                         LinearLayout arrowView,
-                         HongBaoService sideBarService) {
+                         LinearLayout arrowView) {
         mContext = context;
         mWindowManager = windowManager;
         mArrowView = arrowView;
-        mSideBarService = sideBarService;
         // get layout
         LayoutInflater inflater = LayoutInflater.from(context);
         mContentView = (LinearLayout) inflater.inflate(R.layout.layout_content, null);
@@ -69,6 +73,7 @@ public class SideBarContent implements View.OnClickListener {
     @SuppressLint("NonConstantResourceId")
     @Override
     public void onClick(View v) {
+        HongBaoService mSideBarService=HongBaoService.mService;
         int state=v.getId();
         if (state==R.id.tv_brightness){
             removeOrSendMsg(true,true);
@@ -76,11 +81,21 @@ public class SideBarContent implements View.OnClickListener {
         }else if (state==R.id.tv_back){
             removeOrSendMsg(true,true);
             clearSeekBar();
-            //mSideBarService.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
+            if (isHBS(mSideBarService)){
+                Log.d(MainActivity.TAG,"mSideBarService is null");
+                Toast.makeText(FloadWindowService.mContext,"请在系统中打开无障碍服务or重新点击开启服务",Toast.LENGTH_SHORT).show();
+                return;
+            }
+            mSideBarService.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
         }else if (state==R.id.tv_home){
             removeOrSendMsg(true,false);
             goNormal();
-           // mSideBarService.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME);
+            if (isHBS(mSideBarService)){
+                Log.d(MainActivity.TAG,"mSideBarService is null");
+                Toast.makeText(FloadWindowService.mContext,"请在系统中打开无障碍服务or重新点击开启服务",Toast.LENGTH_SHORT).show();
+                return;
+            }
+            mSideBarService.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME);
         }else if (state==R.id.tv_annotation){
             removeOrSendMsg(true,false);
             goNormal();
@@ -91,8 +106,18 @@ public class SideBarContent implements View.OnClickListener {
         }else if (state==R.id.tv_backstage){
             removeOrSendMsg(true,false);
             goNormal();
-            //mSideBarService.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS);
+            if (isHBS(mSideBarService)){
+                Log.d(MainActivity.TAG,"mSideBarService is null");
+                Toast.makeText(FloadWindowService.mContext,"请在系统中打开无障碍服务or重新点击开启服务",Toast.LENGTH_SHORT).show();
+                return;
+            }
+            mSideBarService.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS);
         }
+    }
+    private boolean isHBS(HongBaoService service){
+        if (service==null)
+            return true;
+        return false;
     }
 
     //设置音量和亮度
@@ -144,16 +169,31 @@ public class SideBarContent implements View.OnClickListener {
             mSeekBarView = null;
         }
     }
-    //退出列表和显示箭头
+
     private void goNormal() {
+        Log.d(MainActivity.TAG,"key goNormal");
+        //退出列表和显示箭头
         arrowsShow();
         clearSeekBar();
+    }
+
+    public void simulateHomeButton() {
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Instrumentation instrumentation = new Instrumentation();
+                    instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_HOME);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     //我要设置的功能
     private void annotationGo() {
         Intent intent=new Intent(mContext, AppNameListActivity.class);
-        Toast.makeText(mContext,"waawdawdawd",Toast.LENGTH_SHORT).show();
+        Toast.makeText(mContext,"正在打开应用",Toast.LENGTH_SHORT).show();
         if((Build.VERSION.SDK_INT <= Build.VERSION_CODES.M) || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)){
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }

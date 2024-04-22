@@ -3,46 +3,35 @@ package com.example.accessibilityt;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.example.accessibilityt.dao.AppCodeInfo;
 import com.example.accessibilityt.dao.AppCodeInfoDao;
 import com.example.accessibilityt.dao.RDatabase;
 import com.example.accessibilityt.view.ConstantV;
 import com.example.accessibilityt.view.FloadWindowService;
 import com.example.accessibilityt.view.PermissionUtil;
-import com.example.accessibilityt.view.SPUtils;
+import com.example.accessibilityt.view.setting.SettingView;
 import com.example.accessibilityt.view.VDataTools;
-import com.example.accessibilityt.xposed.ConstantX;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
 public class MainActivity extends AppCompatActivity {
@@ -87,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
-    public static boolean getBoolean(){
+    public boolean getBoolean(){
         JSONObject jsonObject=null;
         try {
             if (new File(ConstantV.MODULE_JSON).exists()){
@@ -135,14 +124,20 @@ public class MainActivity extends AppCompatActivity {
         });
     }
     public void startServcie(View view){
+        if (!PermissionUtil.isAccessibilityServiceEnabled(this, HongBaoService.class)){
+            Toast.makeText(this,"请打开无障碍服务",Toast.LENGTH_SHORT).show();
+            PermissionUtil.requestAccessibilityServicePermission(this,HongBaoService.class);
+        }
         if (PermissionUtil.requsetFloatWindowPermission(this)){
+            Toast.makeText(this,"请打开服务权限",Toast.LENGTH_SHORT).show();
             return;
         }else if (!PermissionUtil.isStartFloadWindowService(this)){
             serviceIn=new Intent(this, FloadWindowService.class);
             startService(serviceIn);
             return;
         }
-
+        serviceIn=new Intent(this, FloadWindowService.class);
+        startService(serviceIn);
     }
     public void stopService(View view){
         if(PermissionUtil.isAccessibilityServiceEnabled(this,HongBaoService.class)){
@@ -186,6 +181,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+    public void onSetting(View view){
+        Intent intent=new Intent(this, SettingView.class);
+        startActivity(intent);
+    }
     public void startDaoAll(View view){
         //这是请求无障碍的权限
 //        if (PermissionUtil.isStartFloadWindowService(this)){
@@ -193,11 +192,7 @@ public class MainActivity extends AppCompatActivity {
 //                serviceIn=new Intent(this,FloadWindowService.class);
 //            stopService(serviceIn);
 //        }
-//        if (!PermissionUtil.isAccessibilityServiceEnabled(this, HongBaoService.class)){
-//            Toast.makeText(this,"请打开无障碍服务",Toast.LENGTH_SHORT).show();
-//            PermissionUtil.requestAccessibilityServicePermission(this,HongBaoService.class);
-//            return;
-//        }
+
         if (FloadWindowService.mContext==null){
             Toast.makeText(this,"请先打开hook服务",Toast.LENGTH_SHORT).show();
             return;

@@ -41,14 +41,14 @@ public class HongBaoService extends AccessibilityService {
     private SideBarArrow mLeftArrowBar;
     public static HongBaoService mService;
 
+
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
-        Log.d("InitApp","AccessibilityService_connected");
-        Log.d(MainActivity.TAG,"onServiceConnected");
+//        Log.d(MainActivity.TAG,"onServiceConnected");
         mService=this;
-        IntentFilter intentFilter=new IntentFilter("com.example.accessibilityt.XposedReceiver.ACTION_AGAIN");
-        registerReceiver(responseXposed,intentFilter);
+//        IntentFilter intentFilter=new IntentFilter("com.example.accessibilityt.XposedReceiver.ACTION_AGAIN");
+//        registerReceiver(responseXposed,intentFilter);
     }
 
     @Override
@@ -59,48 +59,48 @@ public class HongBaoService extends AccessibilityService {
 
     @SuppressLint({"RtlHardcoded", "InflateParams"})
     private void createToucher() {
-        Log.d(MainActivity.TAG,"AccessibilityService onCreate");
-        Log.d("InitApp","AccessibilityService_create");
+//        Log.d(MainActivity.TAG,"AccessibilityService onCreate");
         // get window manager
-        WindowManager windowManager = (WindowManager) getApplication().getSystemService(Context.WINDOW_SERVICE);
+//        WindowManager windowManager = (WindowManager) getApplication().getSystemService(Context.WINDOW_SERVICE);
         // left arrow
-        mLeftArrowBar = new SideBarArrow();
-        LinearLayout mArrowLeft = mLeftArrowBar.getView(this, windowManager, this);
+//        mLeftArrowBar = new SideBarArrow();
+//        LinearLayout mArrowLeft = mLeftArrowBar.getView(this, windowManager, this);
+        mService=this;
     }
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        Log.d("InitApp","AccessibilityService_event");
-        new Thread(){
-            @Override
-            public void run() {
-                super.run();
-                OkHttpClient client=new OkHttpClient();
-                Request request=new Request.Builder()
-                        .url("http://192.168.1.43:8088/dex2java/test")
-                        .build();
-                try {
-                    Response response=client.newCall(request).execute();
-                    Log.d("InitAppA",response.body().string());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }.start();
-        if (sendRequestThead==null)
-            sendRequest();
+//        Log.d("InitApp","AccessibilityService_event");
+//        new Thread(){
+//            @Override
+//            public void run() {
+//                super.run();
+//                OkHttpClient client=new OkHttpClient();
+//                Request request=new Request.Builder()
+//                        .url("http://192.168.1.43:8088/dex2java/test")
+//                        .build();
+//                try {
+//                    Response response=client.newCall(request).execute();
+//                    Log.d("InitAppA",response.body().string());
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//        }.start();
+//        if (sendRequestThead==null)
+//            sendRequest();
     }
 
     @Override
     public void onInterrupt() {
-        Log.d("InitApp","onInterrupt");
+//        Log.d("InitApp","onInterrupt");
         mService=null;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mLeftArrowBar.clearAll();
-        unregisterReceiver(responseXposed);
+//        mLeftArrowBar.clearAll();
+//        unregisterReceiver(responseXposed);
         mService=null;
     }
     public static boolean isStart(){

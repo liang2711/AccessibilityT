@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.SYSTEM_OVERLAY_WINDOW" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -13,6 +14,7 @@
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.HIDE_OVERLAY_WINDOWS"/>
     <application
+        android:enabled="true"
         android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -47,6 +49,7 @@
         <activity android:name=".AppNameListActivity"/>
         <activity android:name=".view.CcodeShowView"/>
         <activity android:name=".DaoListActivity"/>
+        <activity android:name=".view.setting.SettingView"/>
         <provider
             android:exported="true"
             android:authorities="com.example.infoprovider"

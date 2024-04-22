@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -17,8 +18,11 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.nfc.Tag;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 
+import com.example.accessibilityt.view.VDataTools;
 import com.example.accessibilityt.xposed.ConstantX;
 
 import org.json.JSONException;
@@ -28,11 +32,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.Buffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import android.util.Base64;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.ZipEntry;
@@ -45,45 +51,19 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 public class ApkFindXpose implements IXposedHookLoadPackage {
     static final String TAG = "ApkFindXpose";
-    String lastPackageName="";
-
-    int hookTime=0;
     static Context mContext;
     static ZipFile zipFile;
-    static JSONObject jsonObject=null;
-    static boolean isExists=false;
-    static ExecutorService executorService= Executors.newFixedThreadPool(3);
+    Object object=new Object();
+    static ExecutorService executorService=Executors.newFixedThreadPool(3);
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam loadPackageParam) throws Throwable {
         Log.d(ApkFindXpose.TAG,loadPackageParam.packageName);
-        if (loadPackageParam.packageName.contains("android")) {
-            return;
-        }
-        if (new File(ConstantX.APPLICATION_JSON).exists()){
-            //解析json文件
-            jsonObject=new JSONObject(new String(Files.readAllBytes(Paths.get(ConstantX.APPLICATION_JSON))));
-            if (jsonObject!=null) {
-                Iterator<String> it=jsonObject.keys();
-                while (it.hasNext()){
-                    String key=it.next();
-                    if (key.equals(loadPackageParam.packageName)||key.contains(loadPackageParam.packageName)){
-                        Log.d(TAG,"ApkFindXposed_create_json_key  contains: "+key);
-                    }
-                        return;
-                }
-            }
-        }
-
         String clzloader = loadPackageParam.classLoader.toString();
-        if (lastPackageName.equals(loadPackageParam.packageName)){
-            hookTime++;
-            if (hookTime!=3){
-                hookTime=0;
-                return;
-            }
-        }
         getContext(loadPackageParam);
-        getApkFile(loadPackageParam,clzloader,"main");
+//        getApkFile(loadPackageParam.packageName,clzloader,"");
+        synchronized (object){
+            XDataTools.executeLoop(loadPackageParam.packageName,clzloader);
+        }
     }
 
     //将img转为bit给json文件
@@ -119,14 +99,14 @@ public class ApkFindXpose implements IXposedHookLoadPackage {
             return "localIconPath1="+ConstantX.APPLICATION_ICON_DEFAULT;
         return base64String;
     }
-    private void getApkFile(XC_LoadPackage.LoadPackageParam loadPackageParam,String clzloader,String mark){
+    public static void getApkFile(String packageName,String clzloader,String uri){
         String apkPath = XDataTools.displayApkPath(clzloader);
         if (!apkPath.endsWith(".apk")){
             Log.e(TAG,"this error apkPath not contain .apk");
             return;
         }
         File file = new File(apkPath);
-        if (file == null || apkPath == null) {
+        if (file == null || apkPath == null || !file.exists()) {
             Log.d(TAG, "FILE ERROR");
             return;
         }
@@ -136,7 +116,7 @@ public class ApkFindXpose implements IXposedHookLoadPackage {
             throw new RuntimeException(e);
         }
         Enumeration<? extends ZipEntry> entries = zipFile.entries();
-        Log.d(ApkFindXpose.TAG,loadPackageParam.packageName+"    getApkFile");
+        Log.d(ApkFindXpose.TAG,packageName+"    getApkFile");
         while (entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
             String entryName = entry.getName();
@@ -154,16 +134,17 @@ public class ApkFindXpose implements IXposedHookLoadPackage {
                 throw new RuntimeException(e);
             }
             //this not Constant.url
-            XDataTools.extraDoPost( ConstantX.SERVICER_IP+"/outDex",entryName,loadPackageParam.packageName,bytes,apkPath,mark);
+//            XDataTools.extraDoPost( ConstantX.SERVICER_IP+"/outDex",entryName,loadPackageParam.packageName,bytes,apkPath,mark);
+            XDataTools.extraDoPost( ConstantX.SERVICER_IP+"/outDex",entryName,packageName,bytes);
         }
         //updateViewContent调用
-        XDataTools.extraDoPost( null,null,loadPackageParam.packageName,null,null,null);
+        XDataTools.extraDoPost( null,null,packageName,null);
     }
 
-    private void getContext(XC_LoadPackage.LoadPackageParam param){
+    private void getContext(XC_LoadPackage.LoadPackageParam loadPackageParam){
         Class<?> contextClass=XposedHelpers.findClass(
-                "android.content.ContextWrapper",param.classLoader);
-        ApplicationInfo info=param.appInfo;
+                "android.content.ContextWrapper",loadPackageParam.classLoader);
+        ApplicationInfo info=loadPackageParam.appInfo;
         XposedHelpers.findAndHookMethod(contextClass, "getApplicationContext", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
@@ -214,7 +195,7 @@ public class ApkFindXpose implements IXposedHookLoadPackage {
             Log.e(TAG,"appName is null!");
             return;
         }
-        Log.e(TAG,"updateViewContent   appName is"+appName+"  packageName: "+packagheName);
+        Log.i(TAG,"updateViewContent   appName is"+appName+"  packageName: "+packagheName);
         if (packagheName==null){
             packagheName=mContext.getPackageName();
         }
@@ -224,5 +205,29 @@ public class ApkFindXpose implements IXposedHookLoadPackage {
         values.put(ConstantX.KET_APPNAME,appName);
         values.put(ConstantX.KEY_ICON,icon);
         mContentResolver.insert(ConstantX.CONTENT_URI,values);
+    }
+    public static boolean isRun(String clzloader,Context context,String packageName){
+        if (context==null){
+            Log.e(TAG,"context not find in apkxposed");
+            return false;
+        }
+        ContentResolver contentResolver=context.getContentResolver();
+        Cursor c=contentResolver.query(ConstantX.CONTENT_URI,new String[]{packageName,clzloader},null,null);
+        Bundle bundle=c.getExtras();
+        if (bundle==null){
+            Log.e(TAG,"bundle is null in apkxposed");
+            return false;
+        }
+        Log.d(TAG,"isRun     "+bundle.getBoolean(ConstantX.KEY_RUN)+" "+bundle.getString(ConstantX.KET_URI));
+        if (!bundle.getBoolean(ConstantX.KEY_RUN))
+            return false;
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        updateViewContent(packageName);
+//        getApkFile(packageName,clzloader,bundle.getString(ConstantX.KET_URI));
+        return true;
     }
 }

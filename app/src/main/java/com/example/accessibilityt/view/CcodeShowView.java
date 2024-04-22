@@ -29,8 +29,10 @@ import com.example.accessibilityt.dao.AppCodeInfo;
 import com.example.accessibilityt.dao.AppCodeInfoDao;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class CcodeShowView extends AppCompatActivity {
     public static DrawerLayout drawerLayout;
@@ -87,25 +89,45 @@ public class CcodeShowView extends AppCompatActivity {
             public void run() {
                 super.run();
                 List<AppCodeInfo> list=null;
+                AppCodeInfoDao dao=null;
                 try {
-                    AppCodeInfoDao dao=VDataTools.rDatabase.getDao();
+                    dao=VDataTools.rDatabase.getDao();
                     list=dao.getAppNameAll(appName);
                 }catch (Exception e){
                     Log.d(AppNameListActivity.TAG,"database table Query fail :"+appName+" in ccodeshowview");
                 }
-                Log.d(AppNameListActivity.TAG,"getAppListData CcodeShowView:"+appName);
-
+                boolean isState=VDataTools.setMJson();
+                Log.d(AppNameListActivity.TAG,"getAppListData CcodeShowView:"+appName+"   isState"+isState);
                 Message message=Message.obtain();
                 Bundle bundle=new Bundle();
                 bundle.putParcelableArrayList("list",new ArrayList<>(list));
                 message.setData(bundle);
                 handler.sendMessage(message);
-
-                if (!VDataTools.setMJson()){
+                if (!isState){
                     if (list==null) list=new ArrayList<>();
-                    VDataTools.javaFileZipResponse(ConstantV.SERVICER_IP+"/dlzip",packageName,".java",appName,list);
+                    Thread thread=VDataTools.all(VDataTools.getServiceUri()+"/all",packageName,FloadWindowService.mContext);
+                    thread.start();
+                    try {
+                        thread.join();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    VDataTools.javaFileZipResponse(VDataTools.getServiceUri()+"/dlzip",packageName,".java",appName,list);
+                }else{
+                    Thread thread=VDataTools.jarFileZipResponse(VDataTools.getServiceUri()+"/dlzip",
+                            packageName,packageName.replace('.','/'),appName,".jar",FloadWindowService.mContext);
+                    thread.start();
+                    try {
+                        thread.join();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    Message message1=Message.obtain();
+                    Bundle bundle1=new Bundle();
+                    bundle1.putParcelableArrayList("list",new ArrayList<>(dao.getAppNameAll(appName)));
+                    message1.setData(bundle1);
+                    handler.sendMessage(message1);
                 }
-
             }
         }.start();
     }
@@ -125,7 +147,13 @@ public class CcodeShowView extends AppCompatActivity {
         }
 
         public void setInfos(List<AppCodeInfo> infos) {
-            this.infos = infos;
+            List<AppCodeInfo> list=new ArrayList<>();
+            Set set=new HashSet();
+            for (AppCodeInfo str:infos){
+                if (set.add(str))
+                    list.add(str);
+            }
+            this.infos = list;
         }
 
         public List<AppCodeInfo> getInfos() {

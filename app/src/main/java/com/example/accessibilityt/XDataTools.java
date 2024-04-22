@@ -1,5 +1,7 @@
 package com.example.accessibilityt;
 
+import static com.example.accessibilityt.ApkFindXpose.TAG;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -11,8 +13,16 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.example.accessibilityt.view.ConstantV;
+import com.example.accessibilityt.xposed.ConstantX;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -22,8 +32,15 @@ import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
+
+import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 public class XDataTools {
     private static final String CLASSNAME_TAG="CLASSNAME_TAG";
@@ -31,68 +48,25 @@ public class XDataTools {
     public static Handler handler=new Handler(Looper.getMainLooper()){
         @Override
         public void handleMessage(@NonNull Message msg) {
-            Bundle bundle=null;
-            String packageName=null;
-            String fileName=null;
-            String urlPath=null;
-            String apkPath=null;
             super.handleMessage(msg);
             switch (msg.what){
                 case 0:
-                    Log.d(ApkFindXpose.TAG,"network requset ing");
+                    Log.d(TAG,"network requset ing");
                     break;
                 case 1:
-//                    packageName= (String) msg.obj;
-//                    Log.d(ApkFindXpose.TAG,"network requset end");
-//                    if (ApkFindXpose.zipFile!=null) {
-//                        try {
-//                            ApkFindXpose.zipFile.close();
-//                        } catch (IOException e) {
-//                            throw new RuntimeException(e);
-//                        }
-//                    }
-//                    if (executeLoop()) return;
-//                    //数据库存储
-//                    ApkFindXpose.updateViewContent(packageName);
-                    break;
-                case 2:
-                    break;
-                case 9:
-                    //如果请求失败重新请求（以弃用）
-                    Log.d(ApkFindXpose.TAG,"handler 9 of what");
-                    bundle=msg.getData();
-                    fileName=bundle.getString("fileName");
-                    packageName=bundle.getString("packageName");
-                    urlPath=bundle.getString("urlPath");
-                    apkPath=bundle.getString("apkPath");
-                    isStatuLoop=true;
-                    //判断有木有context有就直接执行ageinRequsetDex没有就在 11执行
-                    if (executeLoop()) {
-                        isStatuLoop=false;
-                        return;
+                    if (!ApkFindXpose.isRun(msg.getData().getString("s1"),ApkFindXpose.mContext,msg.getData().getString("s2"))){
+                        Log.e(TAG,"运行post请求失败");
                     }
-                    Log.d(ApkFindXpose.TAG,"handler 9 of what context exist");
-                    ageinRequsetDex(ApkFindXpose.mContext,urlPath,fileName,packageName,apkPath);
                     break;
                 case 10:
                     ApkFindXpose.updateViewContent(ApkFindXpose.mContext.getPackageName());
-                    break;
-                case 11:
-                    //弃用
-                    Log.d(ApkFindXpose.TAG,"handler 11 of what");
-                    bundle=msg.getData();
-                    fileName=bundle.getString("fileName");
-                    packageName=bundle.getString("packageName");
-                    urlPath=bundle.getString("urlPath");
-                    apkPath=bundle.getString("apkPath");
-                    ageinRequsetDex(ApkFindXpose.mContext,urlPath,fileName,packageName,apkPath);
                     break;
             }
         }
     };
 
-    private static boolean executeLoop(){
-        //为了防止thread的覆盖
+    public static boolean executeLoop(String packageName,String clzloader){
+        //为了防止thread的覆盖 初始化
         if (thread!=null){
             isInterrupt=true;
             thread=null;
@@ -102,18 +76,18 @@ public class XDataTools {
                 isInterrupt=false;
             if (isIsFinishContext)
                 isIsFinishContext=false;
-            Log.d(ApkFindXpose.TAG,"context is null (updateViewContent)");
+            Log.d(TAG,"context is null");
             lock=new Object();
             if (lock!=null){
-                loopSetViewProvider();
+                loopSetViewProvider(packageName,clzloader);
                 return true;
             }
         }
         return false;
     }
-    public static void extraDoPost(String urlPath, String fileName, String packageName, byte[] inputStream,String apkPath,String mark){
+    public static void extraDoPost(String urlPath, String fileName, String packageName, byte[] inputStream){
         if (urlPath==null){
-            Log.d(ApkFindXpose.TAG,"network requset end");
+            Log.d(TAG,"network requset end");
             if (ApkFindXpose.zipFile!=null) {
                 try {
                     ApkFindXpose.zipFile.close();
@@ -121,38 +95,25 @@ public class XDataTools {
                     throw new RuntimeException(e);
                 }
             }
-            if (executeLoop()) return;
+//            if (executeLoop()) return;
             //数据库存储
             ApkFindXpose.updateViewContent(packageName);
             return;
         }
-        if (ApkFindXpose.executorService!=null){
+//        doPost(urlPath,fileName,packageName,inputStream);
+//        if (ApkFindXpose.executorService!=null){
             ApkFindXpose.executorService.execute(new Runnable() {
                 @Override
                 public void run() {
-                    doPost(urlPath,fileName,packageName,inputStream,apkPath,mark);
+                    doPost(urlPath,fileName,packageName,inputStream);
                 }
             });
-        }else new Thread(){
-            @Override
-            public void run() {
-                super.run();
-//                if (urlPath==null){
-//                    Message msg=new Message();
-//                    msg.obj=packageName;
-//                    msg.what=1;
-//                    handler.sendMessage(msg);
-//                    return;
-//                }
-                doPost(urlPath,fileName,packageName,inputStream,apkPath,mark);
-            }
-        }.start();
     }
-    private static void doPost(String urlPath,String fileName,String packageName,byte[] inputStream,String apkPath,String mark){
+    private static void doPost(String urlPath,String fileName,String packageName,byte[] inputStream){
         final String LINE_FEED = "\r\n";
         final String BOUNDARY = "#";
         try {
-            Log.d(ApkFindXpose.TAG,"doPost");
+            Log.d(TAG,"doPost "+inputStream.length);
             URL url = new URL(urlPath);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setDoOutput(true);
@@ -184,8 +145,8 @@ public class XDataTools {
 
             int responseCode = connection.getResponseCode();
             if (responseCode!=200){
-                Log.d(ApkFindXpose.TAG,packageName+" "+fileName+" requstion error");
-                Log.e(ApkFindXpose.TAG,"this error:"+mark+" urlPath:"+urlPath+" fileName:"+fileName+" packageName:"+packageName);
+//                Log.e(TAG,packageName+" "+fileName+" requstion error");
+                Log.e(TAG,"this error:  responseCode"+responseCode+" urlPath:"+urlPath+" fileName:"+fileName+" packageName:"+packageName);
                 return;
             }
             InputStream read=null;
@@ -208,30 +169,11 @@ public class XDataTools {
             handler.sendMessage(msg);
             // 处理响应...
         } catch (IOException e) {
-            Log.e(ApkFindXpose.TAG,"this error:"+mark+" urlPath:"+urlPath+" fileName:"+fileName+" packageName:"+packageName);
+            e.printStackTrace();
+            Log.e(TAG,"this error: urlPath:"+urlPath+" fileName:"+fileName+" packageName:"+packageName);
         }
     }
 
-    //向无障碍再次请求代码(已弃用)
-    private static void ageinRequsetDex(Context context,String urlPath, String fileName, String packageName,String apkPath){
-        Log.d(ApkFindXpose.TAG,"packageName:"+packageName);
-        if (context==null){
-            Log.d(ApkFindXpose.TAG,"ageinRequsetDex-----------end");
-            return;
-        }
-        Intent intent = new Intent();
-        intent.setAction("com.example.accessibilityt.XposedReceiver");
-        try {
-            intent.putExtra("urlPath",urlPath);
-            intent.putExtra("fileName",fileName);
-            intent.putExtra("packageName",packageName);
-            intent.putExtra("apkPath",apkPath);
-            intent.setClass(context,Class.forName("com.example.accessibilityt.XposedReceiver"));
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-        context.sendBroadcast(intent);
-    }
     public static String displayApkPath(String text){
         String prefix="/data/app/";
         String suffix=".apk";
@@ -245,7 +187,7 @@ public class XDataTools {
         }
         return null;
     }
-    static boolean isIsFinishContext=false;
+    static volatile boolean isIsFinishContext=false;
     private static Thread thread=null;
     private static volatile boolean isInterrupt=false;
 
@@ -253,7 +195,7 @@ public class XDataTools {
     private static volatile boolean isStatuLoop=false;
     private static int threadTime=1;
     //判断有木有context
-    public static void loopSetViewProvider(){
+    public static void loopSetViewProvider(String packageName,String clzloader){
          thread=new Thread(new Runnable() {
             @Override
             public void run() {
@@ -278,18 +220,34 @@ public class XDataTools {
                         }
                     }
                 }
-                Log.d(ApkFindXpose.TAG,"loop end");
-                Message msg=new Message();
-                if (!isStatuLoop){
-                    //当context被hook到时调用
-                    msg.what=10;
-                }else {
-                    msg.what=11;
+                Log.d(TAG,"loop end  "+(ApkFindXpose.mContext!=null));
+                if (!ApkFindXpose.isRun(clzloader,ApkFindXpose.mContext, packageName)) {
+                    Log.e(TAG, "运行post请求失败");
                 }
-                handler.sendMessage(msg);
-
             }
         });
          thread.start();
+    }
+    public static String getURI(){
+        if (new File(ConstantX.MODULE_JSON).exists()){
+            JSONObject jsonObject=null;
+            try {
+                jsonObject=new JSONObject(new String(Files.readAllBytes(Paths.get(ConstantX.MODULE_JSON))));
+                return jsonObject.getString(ConstantX.KET_URI);
+            } catch (JSONException e) {
+                return null;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return null;
+    }
+    public static String getServiceUri(){
+        String str=getURI();
+        if (str==null || str.equals("")){
+            return ConstantX.SERVICER_IP;
+        }
+        String uri="http://"+str+":8088/dex2java";
+        return uri;
     }
 }

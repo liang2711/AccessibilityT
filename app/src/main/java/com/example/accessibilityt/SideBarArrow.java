@@ -20,15 +20,13 @@ public class SideBarArrow implements View.OnClickListener {
     private LinearLayout mArrowView;
     private Context mContext;
     private WindowManager mWindowManager;
-    private HongBaoService mSideBarService;
     private SideBarContent mContentBar;
     private LinearLayout mContentBarView;
 
     //自己画view
-    public LinearLayout getView(Context context,WindowManager windowManager,HongBaoService sideBarService) {
+    public LinearLayout getView(Context context,WindowManager windowManager) {
         mContext = context;
         mWindowManager = windowManager;
-        mSideBarService = sideBarService;
         mParams = new WindowManager.LayoutParams();
         // compatible 让窗口在第一层
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -65,7 +63,7 @@ public class SideBarArrow implements View.OnClickListener {
             mArrowView.setVisibility(View.GONE);
             if(null == mContentBar || null == mContentBarView) {
                 mContentBar = new SideBarContent();
-                mContentBarView = mContentBar.getView(mContext,mWindowManager,mParams,mArrowView,mSideBarService);
+                mContentBarView = mContentBar.getView(mContext,mWindowManager,mParams,mArrowView);
             }else {
                 mContentBarView.setVisibility(View.VISIBLE);
             }

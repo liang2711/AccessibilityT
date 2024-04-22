@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.accessibilityt.view.AppListTouchListener;
 import com.example.accessibilityt.view.AppNameAdapter;
+import com.example.accessibilityt.view.ConstantV;
 import com.example.accessibilityt.xposed.ConstantX;
 import com.scwang.smart.refresh.layout.api.RefreshLayout;
 import com.scwang.smart.refresh.layout.listener.OnRefreshListener;
@@ -54,11 +55,11 @@ public class AppNameListActivity extends AppCompatActivity {
         refreshLayout.setOnRefreshListener(new OnRefreshListener() {
             @Override
             public void onRefresh(@NonNull RefreshLayout refreshLayout) {
-                if (new File(ConstantX.APPLICATION_JSON).exists()){
+                if (new File(ConstantV.APPLICATION_JSON).exists()){
                     //解析json文件
                     JSONObject jsonObject= null;
                     try {
-                        jsonObject = new JSONObject(new String(Files.readAllBytes(Paths.get(ConstantX.APPLICATION_JSON))));
+                        jsonObject = new JSONObject(new String(Files.readAllBytes(Paths.get(ConstantV.APPLICATION_JSON))));
                         if (jsonObject!=null) {
                             if(jsonObject.length()==appNameAdapter.getDataListSize()){
                                 refreshLayout.finishRefresh(2000);

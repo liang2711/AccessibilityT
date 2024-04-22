@@ -12,6 +12,7 @@ import android.widget.LinearLayout;
 
 import androidx.annotation.Nullable;
 
+import com.example.accessibilityt.HongBaoService;
 import com.example.accessibilityt.MainActivity;
 import com.example.accessibilityt.SideBarArrow;
 
@@ -51,7 +52,7 @@ public class FloadWindowService extends Service {
         WindowManager windowManager = (WindowManager) getApplication().getSystemService(Context.WINDOW_SERVICE);
         // left arrow
         mLeftArrowBar = new SideBarArrow();
-        LinearLayout mArrowLeft = mLeftArrowBar.getView(this, windowManager, null);
+        LinearLayout mArrowLeft = mLeftArrowBar.getView(this, windowManager);
 
         // register
         IntentFilter filter = new IntentFilter();
